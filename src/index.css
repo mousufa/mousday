@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-stone-700 font-body antialiased;
+    background-image: radial-gradient(circle at 15% 10%, #fff0f5 0%, transparent 45%),
+      radial-gradient(circle at 85% 0%, #ffe3ee 0%, transparent 40%),
+      radial-gradient(circle at 50% 100%, #fff8fb 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: #ffd6e8;
+    color: #7a2e46;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Playfair Display", serif;
+  }
+  .font-rounded {
+    font-family: "Quicksand", sans-serif;
+  }
+  .font-body {
+    font-family: "Poppins", sans-serif;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #ffd6e8;
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+textarea:focus,
+input:focus {
+  outline: none;
+}
