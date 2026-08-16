@@ -27,6 +27,43 @@ const DEFAULT_SETTINGS = {
  * }
  */
 
+// Some browsers/modes (Safari with "Block All Cookies", private browsing on
+// older iOS, locked-down webviews) throw on any localStorage access instead
+// of just failing quietly. Without this guard that throw happens during the
+// very first render (App reads settings via useState initializer) and React
+// unmounts the whole tree with no visible error — a blank white screen. This
+// in-memory fallback keeps the app usable (just non-persistent) instead.
+const memoryStore = new Map();
+let storageAvailable = true;
+try {
+  const testKey = "mld:storageTest";
+  localStorage.setItem(testKey, "1");
+  localStorage.removeItem(testKey);
+} catch {
+  storageAvailable = false;
+}
+
+function storageGet(key) {
+  if (!storageAvailable) return memoryStore.get(key) ?? null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return memoryStore.get(key) ?? null;
+  }
+}
+
+function storageSet(key, value) {
+  if (!storageAvailable) {
+    memoryStore.set(key, value);
+    return;
+  }
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    memoryStore.set(key, value);
+  }
+}
+
 function safeParse(raw, fallback) {
   if (!raw) return fallback;
   try {
@@ -38,9 +75,9 @@ function safeParse(raw, fallback) {
 }
 
 function ensureVersion() {
-  const v = localStorage.getItem(KEYS.version);
+  const v = storageGet(KEYS.version);
   if (!v) {
-    localStorage.setItem(KEYS.version, String(SCHEMA_VERSION));
+    storageSet(KEYS.version, String(SCHEMA_VERSION));
   }
 }
 
@@ -64,7 +101,7 @@ export function addDaysToKey(key, delta) {
 
 export function getAllEntries() {
   ensureVersion();
-  return safeParse(localStorage.getItem(KEYS.entries), {});
+  return safeParse(storageGet(KEYS.entries), {});
 }
 
 export function getEntry(dateKey) {
@@ -88,14 +125,14 @@ export function saveEntry(dateKey, patch) {
     updatedAt: now,
   };
   all[dateKey] = merged;
-  localStorage.setItem(KEYS.entries, JSON.stringify(all));
+  storageSet(KEYS.entries, JSON.stringify(all));
   return merged;
 }
 
 export function deleteEntry(dateKey) {
   const all = getAllEntries();
   delete all[dateKey];
-  localStorage.setItem(KEYS.entries, JSON.stringify(all));
+  storageSet(KEYS.entries, JSON.stringify(all));
 }
 
 export function getYesterdaysApplyNote(dateKey) {
@@ -105,12 +142,12 @@ export function getYesterdaysApplyNote(dateKey) {
 }
 
 export function getSettings() {
-  return { ...DEFAULT_SETTINGS, ...safeParse(localStorage.getItem(KEYS.settings), {}) };
+  return { ...DEFAULT_SETTINGS, ...safeParse(storageGet(KEYS.settings), {}) };
 }
 
 export function saveSettings(patch) {
   const merged = { ...getSettings(), ...patch };
-  localStorage.setItem(KEYS.settings, JSON.stringify(merged));
+  storageSet(KEYS.settings, JSON.stringify(merged));
   return merged;
 }
 
